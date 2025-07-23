@@ -3,9 +3,10 @@
 local Song, super = Class()
 
 function Song:init(data)
-    super.init(self, data)
+    self.data = data
     data = data or {}
     self.tracks = {}
+    self.bpm = data.bpm
     local tracks_names = Utils.removeDuplicates(Utils.getKeys(Utils.mergeMultiple(data.tracks, data.notes)))
     for i = 1, #(tracks_names) do
         local trackname = tracks_names[i]
@@ -17,6 +18,7 @@ function Song:init(data)
             name = trackname,
             source = trackdata and trackdata.music and love.audio.newSource(Assets.getMusicPath(trackdata.music), "stream");
             notes = notedata;
+            replace = trackdata and trackdata.replace;
         }
         self.tracks[trackname] = track
         if self.tracks[trackname].source and trackname ~= "BASE_TRACK" then

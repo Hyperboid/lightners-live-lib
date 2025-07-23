@@ -2,7 +2,7 @@
 ---@field track Song.track
 local RhythmgameChart, super = Class(Object)
 
-function RhythmgameChart:init(instrument, index, track)
+function RhythmgameChart:init(instrument, index, track, song)
     super.init(self, 170 + ((((instrument+1)/2) - 1) * 300), 290, 80, 250)
     self.track = track
     self.party = Game.party[index or 1]
@@ -20,7 +20,7 @@ function RhythmgameChart:init(instrument, index, track)
     self.trackpos = 0;
     self.buffer = {0,0,0};
     self.pressedtimer = {10, 10, 10};
-    self.bpm = 230;
+    self.bpm = song and song.bpm or 230;
     self.notespacing = 60 / self.bpm;
     self.meter = self.notespacing * 4;
     self.startoffset = 0;
@@ -78,7 +78,7 @@ end
 
 function RhythmgameChart:draw()
     self:drawBacking(160, 40, DEBUG_RENDER)
-    self:scr_rhythmgame_draw_chart(160, 40, DEBUG_RENDER)
+    self:drawChart(160, 40, DEBUG_RENDER)
     self:drawBorder(40, DEBUG_RENDER)
 end
 
@@ -225,9 +225,9 @@ function RhythmgameChart:drawBorder(arg0, arg1)
 end
 
 function RhythmgameChart:scr_rhythmgame_noteskip(arg0)
-    if (Game.minmigame.solo_difficulty < 2) then
-        local _skiplength = timestamp[3] - timestamp[Game.minmigame.solo_difficulty + 1];
-        local _solodiff = timestamp[Game.minmigame.solo_difficulty + 1];
+    if (Game.minigame.solo_difficulty < 2) then
+        local _skiplength = timestamp[3] - timestamp[Game.minigame.solo_difficulty + 1];
+        local _solodiff = timestamp[Game.minigame.solo_difficulty + 1];
         
         if (trackpos <= _solodiff and arg0 >= timestamp[3]) then
             arg0 = arg0 - _skiplength;
@@ -236,9 +236,9 @@ function RhythmgameChart:scr_rhythmgame_noteskip(arg0)
         end
     end
     
-    if (Game.minmigame.solo_difficulty > 0) then
-        local _skiplength = timestamp[Game.minmigame.solo_difficulty] - timestamp[0];
-        local _solodiff = timestamp[Game.minmigame.solo_difficulty];
+    if (Game.minigame.solo_difficulty > 0) then
+        local _skiplength = timestamp[Game.minigame.solo_difficulty] - timestamp[0];
+        local _solodiff = timestamp[Game.minigame.solo_difficulty];
         
         if (trackpos <= timestamp[0] and arg0 >= _solodiff) then
             arg0 = arg0 - _skiplength;
@@ -251,7 +251,7 @@ function RhythmgameChart:scr_rhythmgame_noteskip(arg0)
 end
 
 -- [====[
-function RhythmgameChart:scr_rhythmgame_draw_chart(notespeed, centerx, arg2)
+function RhythmgameChart:drawChart(notespeed, centerx, arg2)
     local _hitspeed = not arg2 and Game.minigame.pitch or 1;
 
     if (not arg2 and Game.minigame.lose_con == 2) then
@@ -378,29 +378,32 @@ function RhythmgameChart:scr_rhythmgame_draw_chart(notespeed, centerx, arg2)
         love.graphics.setStencilTest("greater", 0)
     end
 
-    local _looper = not arg2 and ((loop and (self.instrument ~= 0 or tutorial ~= 1)) or (self.chart_end > self.track_length and self.maxnote > 0 and self.track.notes[0].notetime < self.chart_start));
+    -- TODO: Potentially just rewrite this
+    -- [==[
+    local _looper = not arg2 and ((Game.minigame.loop and (self.instrument ~= 0 or tutorial ~= 1)) or (self.chart_end > self.track_length and self.maxnote > 0 and self.track.notes[0].notetime < self.chart_start));
     local _loopcheck = false;
     local remtrackpos = {0,0,0, [0] = 0}
     local _averagetimeunit = ((self.trackpos - remtrackpos[0]) + (remtrackpos[0] - remtrackpos[1]) + (remtrackpos[1] - remtrackpos[2])) / 3;
     local _end_buffer = self.trackpos - (3.6 * _averagetimeunit);
 
-    if (not arg2 and self.instrument == 0 and hardmode) then
+    if (not arg2 and self.instrument == 0 and Game.minigame.hardmode) then
         _end_buffer = self.trackpos - (2.4 * _averagetimeunit);
     end
 
-    local notei = math.max(self.minnote, 0);
+    local notei = math.max(self.minnote-1, 1);
 
     while (notei < #(self.track and self.track.notes or {})) do
         notei = notei+1
+        local note = self.track.notes[notei]
         local _notetime = self.track.notes[notei].notetime;
         local _notealive = self.track.notes[notei].notealive;
         local _notescore = self.track.notes[notei].notescore;
         local _noteend = self.track.notes[notei].noteend;
-        if (not arg2 and self.instrument ~= 1 and obj_rhythmgame.song_id == 0) then
-            _notetime = scr_rhythmgame_noteskip(self.track.notes[notei].notetime);
+        if (not arg2 and self.instrument ~= 1 and Game.minigame.song.id == "raiseupyourbat") then
+            _notetime = self:scr_rhythmgame_noteskip(self.track.notes[notei].notetime);
 
             if (_noteend > 0) then
-                _noteend = scr_rhythmgame_noteskip(_noteend);
+                _noteend = self:scr_rhythmgame_noteskip(_noteend);
             end
         elseif (_loopcheck) then
             _notetime = scr_rhythmgame_noteloop(self.track.notes[notei].notetime);
@@ -419,111 +422,110 @@ function RhythmgameChart:scr_rhythmgame_draw_chart(notespeed, centerx, arg2)
                     _noteend = scr_rhythmgame_noteloop(_noteend);
                 end
             end
-
-            local notey = (self.bottomy - (_notetime * notespeed)) + (self.trackpos * notespeed);
-            local _topy = 0 - 20;
-
-            if (notey < _topy) then
-                if (_looper and not _loopcheck and self.trackpos < 4 and #self.track.notes > 9) then
-                    _loopcheck = true;
-                    notei = #self.track.notes - 9;
-                    goto continue;
-                end
-
-                break;
-            end
-
-            if (notey >= _topy and (notei >= self.minnote or _notescore <= 0 or (_loopcheck and _notealive))) then
-                _end_buffer = self.trackpos - 0.12000000000000001;
-                
-                if (not arg2 and self.instrument == 0 and hardmode) then
-                    _end_buffer = self.trackpos - 0.08666666666666667;
-                end
-                
-                if (_loopcheck == 0 and _notetime < _end_buffer) then
-                    if (notescore[notei] <= 0 and notealive[notei] == 1 and fade == 1) then
-                        missnotecon = 1;
-                        
-                        if (self.instrument == 0 and not arg2) then
-                            miss = miss + 1;
-                        end
-                    end
-                    
-                    notealive[notei] = 0;
-                    self.minnote = notei + 1;
-                end
-                
-                if (_notealive == 1) then
-                    Draw.setColor(_notecol[notetype[notei]]);
-                else
-                    Draw.setColor(_gray);
-                end
-                
-                if (_notescore >= 100) then
-                    Draw.setColor(_yellow);
-                elseif (_notescore >= 30) then
-                    Draw.setColor(_orange);
-                end
-                
-                if (_notealive == 1 or _notescore <= 0) then
-                    if (_notescore < 0 and _noteend > 0 and _notealive == 0) then
-                        _notetime = _notetime - notescore[notei];
-                        notey = (self.bottomy - (_notetime * notespeed)) + (self.trackpos * notespeed);
-                        _notescore = 0;
-                    end
-                    
-                    if (noteanim[notei] > 0 and arg2) then
-                        local _oldcolor = draw_get_color();
-                        Draw.setColor(_yellow);
-                        draw_circle((centerx - 20 - 15) + (notetype[notei] * 40), notey, 3, false);
-                        draw_circle((centerx - 20) + 15 + (notetype[notei] * 40), notey, 3, false);
-                        Draw.setColor(_oldcolor);
-                    end
-                    
-                    self:scr_rhythmgame_draw_note(centerx, notey, notetype[notei]);
-                    
-                    if (arg2 and self.paused and do_refresh) then
-                        local _xleft = centerx;
-                        
-                        if (self.instrument == 2) then
-                            _xleft = _xleft - 15;
-                        else
-                            _xleft = _xleft + 5;
-                        end
-                        
-                        local _node = instance_create((_xleft - _xwidth) + (notetype[notei] * _xwidth) + 15, notey, obj_rhythmgame_editor_note_node);
-                        _node.depth = depth + 1;
-                        _node.noteindex = notei;
-                        
-                        if (self.instrument == 2) then
-                            _node.image_xscale = 1.375;
-                        end
-                    end
-                    
-                    if (_noteend > 0) then
-                        local notelength = (_noteend - _notetime) * notespeed;
-                        self:scr_rhythmgame_draw_note_long(centerx, notey, notetype[notei], notelength, false);
-                    end
-                end
-            end
-
-            if (_looper and not _loopcheck and (notei + 1) == #self.track.notes and self.trackpos > (self.track_length - 4)) then
-                notei = -1;
-                _loopcheck = true;
-            end
-            ::continue::
         else
         end
 
-        local _note_count = (self.instrument == 0) and 1 or 2;
+        local notey = (self.bottomy - (_notetime * notespeed)) + (self.trackpos * notespeed);
+        local _topy = 0 - 20;
+
+        if (notey < _topy) then
+            if (_looper and not _loopcheck and self.trackpos < 4 and #self.track.notes > 9) then
+                _loopcheck = true;
+                notei = #self.track.notes - 9;
+                goto continue;
+            end
+
+            break;
+        end
+        if (notey >= _topy and (notei >= self.minnote or _notescore <= 0 or (_loopcheck and _notealive))) then
+            _end_buffer = self.trackpos - 0.12000000000000001;
+            
+            if (not arg2 and self.instrument == 0 and Game.minigame.hardmode) then
+                _end_buffer = self.trackpos - 0.08666666666666667;
+            end
+            
+            if (not _loopcheck and _notetime < _end_buffer) then
+                if (self.track.notes[notei].notescore <= 0 and self.track.notes.notealive == 1 and fade == 1) then
+                    self.missnotecon = 1;
+                    
+                    if (self.instrument == 0 and not arg2) then
+                        self.miss = self.miss + 1;
+                    end
+                end
+                
+                self.track.notes[notei].notealive = 0;
+                self.minnote = notei + 1;
+            end
+            
+            if (_notealive == 1) then
+                Draw.setColor(_notecol[note.notetype]);
+            else
+                Draw.setColor(_gray);
+            end
+            
+            if (_notescore >= 100) then
+                Draw.setColor(_yellow);
+            elseif (_notescore >= 30) then
+                Draw.setColor(_orange);
+            end
+            
+            if (_notealive == 1 or _notescore <= 0) then
+                if (_notescore < 0 and _noteend > 0 and _notealive == 0) then
+                    _notetime = _notetime - self.track.notes[notei].notescore;
+                    notey = (self.bottomy - (_notetime * notespeed)) + (self.trackpos * notespeed);
+                    _notescore = 0;
+                end
+                
+                if (note.noteanim > 0 and arg2) then
+                    local _oldcolor = {love.graphics.getColor()};
+                    Draw.setColor(_yellow);
+                    draw_circle((centerx - 20 - 15) + (note.notetype * 40), notey, 3, false);
+                    draw_circle((centerx - 20) + 15 + (note.notetype * 40), notey, 3, false);
+                    Draw.setColor(_oldcolor);
+                end
+                
+                self:drawNote(centerx, notey, note.notetype);
+                
+                if (arg2 and self.paused and self.do_refresh) then
+                    local _xleft = centerx;
+                    
+                    if (self.instrument == 2) then
+                        _xleft = _xleft - 15;
+                    else
+                        _xleft = _xleft + 5;
+                    end
+                    
+                    local _node = instance_create((_xleft - _xwidth) + (note.notetype * _xwidth) + 15, notey, obj_rhythmgame_editor_note_node);
+                    _node.depth = depth + 1;
+                    _node.noteindex = notei;
+                    
+                    if (self.instrument == 2) then
+                        _node.image_xscale = 1.375;
+                    end
+                end
+                
+                if (_noteend > 0) then
+                    local notelength = (_noteend - _notetime) * notespeed;
+                    self:drawNoteLong(centerx, notey, note.notetype, notelength, false);
+                end
+            end
+        end
+
+        if (_looper and not _loopcheck and (notei + 1) == #self.track.notes and self.trackpos > (self.track_length - 4)) then
+            notei = -1;
+            _loopcheck = true;
+        end
+        ::continue::
+
+        local _note_count = (self.instrument == 1) and 2 or 3;
 
         for i=1, _note_count do
             if (self.hold_end[i] > 0) then
                 local note_end = (self.hold_end[i] - self.trackpos) * notespeed;
                 Draw.setColor(_orange);
-                self:scr_rhythmgame_draw_note_long(centerx, self.bottomy, i, note_end, true);
+                self:drawNoteLong(centerx, self.bottomy, i, note_end, true);
                 Draw.setColor(_yellow);
-                self:scr_rhythmgame_draw_note(centerx, self.bottomy, i);
+                self:drawNote(centerx, self.bottomy, i);
             end
         end
         
@@ -531,8 +533,36 @@ function RhythmgameChart:scr_rhythmgame_draw_chart(notespeed, centerx, arg2)
         end
     end
     love.graphics.setStencilTest();
+    --]==]
+
+    love.graphics.setStencilTest();
 end
 --]====]
+
+function RhythmgameChart:drawNote(centerx, ypos, notex, arg3)
+    arg3 = arg3 or 0
+    assert(centerx and ypos and notex)
+    if (self.instrument == 2) then
+        centerx = (centerx - 30) + (notex * 30);
+        
+        if (self.paused) then
+            fill_rectangle_points(centerx - 10, ypos - 3, centerx + 10, ypos + 3);
+        else
+            local texture = Assets.getFrames"spr_rhythmgame_heldnote"[1]
+            Draw.draw(texture, centerx, ypos, 0, 1, 1, texture:getWidth()/2, texture:getHeight()/2);
+        end
+    elseif (self.instrument == 1 and notex == 2) then
+        fill_rectangle_points(centerx - 45, ypos - 1, centerx + 45, ypos + 1);
+    else
+        centerx = (centerx - 20) + (notex * 40);
+        local texture = Assets.getFrames"spr_rhythmgame_note"[1]
+        Draw.draw(texture, centerx, ypos, 0, 1, 1, texture:getWidth()/2, texture:getHeight()/2);
+    end
+end
+
+function RhythmgameChart:drawNoteLong(centerx, bottomy, i, note_end, held)
+    
+end
 
 function RhythmgameChart:update()
     super.update(self)

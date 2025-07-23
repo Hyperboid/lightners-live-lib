@@ -11,9 +11,9 @@ function minigame:init(song)
     end
     ---@type RhythmgameChart[]
     self.charts = {
-        self:addChild(RhythmgameChart(2, 1, self.song.tracks.lead));
-        self:addChild(RhythmgameChart(1, 2, self.song.tracks.drums));
-        self:addChild(RhythmgameChart(3, 3, self.song.tracks.vocals));
+        self:addChild(RhythmgameChart(2, 1, self.song.tracks.lead, self.song));
+        self:addChild(RhythmgameChart(1, 2, self.song.tracks.drums, self.song));
+        self:addChild(RhythmgameChart(3, 3, self.song.tracks.vocals, self.song));
     }
 end
 
@@ -52,9 +52,9 @@ function minigame:seek(t)
     end
 end
 
-function minigame:setTrack2Volume(n)
-    self.track1:setVolume(1 - n)
-    self.track2:setVolume(n)
+function minigame:setTrackActive(trackid, active)
+    local volume = active and 1 or 0
+    
 end
 
 return minigame
