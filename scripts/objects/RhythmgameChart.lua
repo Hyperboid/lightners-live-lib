@@ -256,7 +256,6 @@ function RhythmgameChart:scr_rhythmgame_noteskip(arg0)
     return arg0;
 end
 
--- [====[
 function RhythmgameChart:drawChart(notespeed, centerx, arg2)
     local _hitspeed = (not arg2 and Game.minigame.pitch or 1) * DTMULT;
 
@@ -396,8 +395,6 @@ function RhythmgameChart:drawChart(notespeed, centerx, arg2)
         love.graphics.setStencilTest("greater", 0)
     end
 
-    -- TODO: Potentially just rewrite this
-    -- [==[
     local _looper = not arg2 and ((Game.minigame.loop and (self.instrument ~= 0 or tutorial ~= 1)) or (self.chart_end > self.track_length and self.maxnote > 0 and self.track.notes[0].notetime < self.chart_start));
     local _loopcheck = false;
     local remtrackpos = {0,0,0, [0] = 0}
@@ -501,7 +498,9 @@ function RhythmgameChart:drawChart(notespeed, centerx, arg2)
                     draw_circle((centerx - 20) + 15 + (note.notetype * 40), notey, 3, false);
                     Draw.setColor(_oldcolor);
                 end
-                
+                -- if _notescore > 0 then
+                --     goto continue
+                -- end
                 self:drawNote(centerx, notey, note.notetype);
                 
                 if (arg2 and self.paused and self.do_refresh) then
@@ -551,11 +550,9 @@ function RhythmgameChart:drawChart(notespeed, centerx, arg2)
     if (not arg2 and not self.paused) then
     end
     love.graphics.setStencilTest();
-    --]==]
 
     love.graphics.setStencilTest();
 end
---]====]
 
 function RhythmgameChart:drawNote(centerx, ypos, notex, arg3)
     arg3 = arg3 or 0
@@ -624,15 +621,53 @@ end
 
 
 function RhythmgameChart:handleAutoplay()
-    
+    if self:getNote(1) then
+        self:tryHitNote(1)
+    end
+    if self:getNote(2) then
+        self:tryHitNote(2)
+    end
+end
+
+function RhythmgameChart:getNote(lane)
+    for i = self.minnote, self.minnote + 1 do
+        if not (self.track and self.track.notes[i]) then break end
+        if self.track.notes[i].notetype == lane - 1
+            and self.track.notes[i].notescore == 0
+            and math.abs(self.track.notes[i].notetime - (self.trackpos)) < 0.1 then
+            return self.track.notes[i], i
+        end
+    end
+end
+
+function RhythmgameChart:tryHitNote(lane)
+    local note, noteindex = self:getNote(lane)
+    if not note then
+        if self.track then
+            Game.minigame:setTrackActive(self.track.name, false)
+        end
+        return
+    end
+    self.note_hit_timer[lane] = 4
+    note.score = 10
+    self.hold_end[lane] = note.noteend
+    if note.noteend > 0 then
+        self.hold_start[lane] = note.notestart
+    end
+    note.notescore = 3
+    note.notealive = false
+    if self.track then
+        Game.minigame:setTrackActive(self.track.name, true)
+    end
+    return note
 end
 
 function RhythmgameChart:handleInput()
     if Input.pressed("confirm") then
-        self.note_hit_timer[1] = 5
+        self:tryHitNote(1)
     end
     if Input.pressed("cancel") then
-        self.note_hit_timer[2] = 5
+        self:tryHitNote(2)
     end
 end
 
