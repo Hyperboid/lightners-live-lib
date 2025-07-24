@@ -53,8 +53,12 @@ function minigame:seek(t)
 end
 
 function minigame:setTrackActive(trackid, active)
-    local volume = active and 1 or 0
-    
+    local track = assert(self.song.tracks[trackid], "Unknown track: "..trackid)
+    if track.replace then
+        self:setTrackActive(track.replace, not active)
+    end
+    if not track.source then return end
+    track.source:setVolume(active and 1 or 0)
 end
 
 return minigame

@@ -2,6 +2,10 @@
 ---@field track Song.track
 local RhythmgameChart, super = Class(Object)
 
+local a_single_pixel_data = love.image.newImageData(1,1)
+a_single_pixel_data:setPixel(0, 0, {1,1,1,1})
+RhythmgameChart.pixel = love.graphics.newImage(a_single_pixel_data)
+
 function RhythmgameChart:init(instrument, index, track, song)
     super.init(self, 170 + ((((instrument+1)/2) - 1) * 300), 290, 80, 250)
     self.track = track
@@ -225,6 +229,8 @@ function RhythmgameChart:drawBorder(arg0, arg1)
 end
 
 function RhythmgameChart:scr_rhythmgame_noteskip(arg0)
+    -- TODO: hahahaha
+    do return arg0 end
     if (Game.minigame.solo_difficulty < 2) then
         local _skiplength = timestamp[3] - timestamp[Game.minigame.solo_difficulty + 1];
         local _solodiff = timestamp[Game.minigame.solo_difficulty + 1];
@@ -252,7 +258,7 @@ end
 
 -- [====[
 function RhythmgameChart:drawChart(notespeed, centerx, arg2)
-    local _hitspeed = not arg2 and Game.minigame.pitch or 1;
+    local _hitspeed = (not arg2 and Game.minigame.pitch or 1) * DTMULT;
 
     if (not arg2 and Game.minigame.lose_con == 2) then
         _hitspeed = 0;
@@ -299,7 +305,7 @@ function RhythmgameChart:drawChart(notespeed, centerx, arg2)
         fill_rectangle_points(centerx - 40, self.bottomy - 1, centerx + 40, self.bottomy + 1);
 
         for i=0,2 do
-            _beam = Ease.inExpo(self.note_hit_timer[i+1] / 5, 0, 1, 1);
+            _beam = Ease.inQuad(self.note_hit_timer[i+1] / 5, 0, 1, 1);
 
             if (self.note_hit_timer[i+1] > 0) then
                 local gradtextures = Assets.getFrames("spr_whitegradientdown_rhythm")
@@ -330,16 +336,23 @@ function RhythmgameChart:drawChart(notespeed, centerx, arg2)
     else
         for i=0, 1 do
             if (self.note_hit_timer[i+1] > 0) then
-                _beam = Ease.inExpo(self.note_hit_timer[i] / 5, 0, 1, 1);
-                local _ease = self.note_hit_timer[i] / 5;
+                _beam = Ease.inQuad(self.note_hit_timer[i+1] / 5, 0, 1, 1);
+
+                local buttonframes = Assets.getFrames"spr_rhythmgame_button"
+                local hitframes = Assets.getFrames"spr_rhythmgame_note_hit"
+                local gradframes = Assets.getFrames"spr_whitegradientdown_rhythm"
+                local _ease = self.note_hit_timer[i+1] / 5;
                 local _col = _white;
                 local _cool = false;
                 local _side = (i * 2) - 1;
                 local _cenx = centerx + (20 * _side);
                 local _score = 0;
+                if i == 1 then
+                    _cenx = _cenx - 1
+                end
 
                 if (self.instrument == 0) then
-                    _score = note_hit_score[i];
+                    -- _score = note_hit_score[i+1];
                     _cool = _score >= 100;
                     _col = _cool and _gold or _white;
                 end
@@ -350,22 +363,27 @@ function RhythmgameChart:drawChart(notespeed, centerx, arg2)
                         _cool = true;
                         _col = _gold;
                     end
-
-                    draw_sprite_ext(spr_rhythmgame_button, 3, _cenx, self.bottomy, 1, 1, 0, _white, self.note_hit_timer[i] / 5);
+                    Draw.setColor(_white)
+                    Draw.draw(buttonframes[4], _cenx, self.bottomy, 0, 1, 1, buttonframes[4]:getWidth()/2, buttonframes[4]:getHeight()/2);
+                    -- draw_sprite_ext(spr_rhythmgame_button, 3, _cenx, self.bottomy, 1, 1, 0, _white, self.note_hit_timer[i] / 5);
                 end
 
-                if (not arg2 and obj_rhythmgame.fame >= 12000 and _score > 0) then
-                    draw_sprite_ext(spr_rhythmgame_note_hit, (1 - _beam) * 2.9, _cenx + (_side * (1 - _ease) * 2), self.bottomy, 2 - _beam, 2 - _beam, 0, Utils.lerp(_white, _col, 1 - _ease), _ease);
+                if (not arg2 and (Game.minigame.fame or 0) >= 12000 and _score > 0) then
+                    Draw.setColor(Utils.lerp(_white, _col, 1 - _ease))
+                    Draw.draw(hitframes[3], _cenx, self.bottomy, 0, 1, 1, hitframes[3]:getWidth()/2, hitframes[3]:getHeight()/2);
+                    -- draw_sprite_ext(spr_rhythmgame_note_hit, (1 - _beam) * 2.9, _cenx + (_side * (1 - _ease) * 2), self.bottomy, 2 - _beam, 2 - _beam, 0, Utils.lerp(_white, _col, 1 - _ease), _ease);
                 end
 
                 if (_cool) then
-                    draw_sprite_ext(spr_whitegradientdown_rhythm, 1, _cenx, self.bottomy, _beam, 1, 0, _gold, 1);
-                    draw_sprite_ext(spr_whitegradientdown_rhythm, 2, _cenx, self.bottomy, _beam, 1, 0, _white, 1);
+                    -- draw_sprite_ext(spr_whitegradientdown_rhythm, 1, _cenx, self.bottomy, _beam, 1, 0, _gold, 1);
+                    -- draw_sprite_ext(spr_whitegradientdown_rhythm, 2, _cenx, self.bottomy, _beam, 1, 0, _white, 1);
                 else
-                    draw_sprite_ext(spr_whitegradientdown_rhythm, 0, _cenx, self.bottomy, _beam, 1, 0, _white, 1);
+                    Draw.setColor(_white, _beam)
+                    Draw.draw(gradframes[1], _cenx, self.bottomy, 0, 1, 1, gradframes[1]:getWidth()/2, gradframes[1]:getHeight() - 4);
+                    -- draw_sprite_ext(spr_whitegradientdown_rhythm, 0, _cenx, self.bottomy, _beam, 1, 0, _white, 1);
                 end
 
-                self.note_hit_timer[i] = self.note_hit_timer[i] - _hitspeed;
+                self.note_hit_timer[i+1] = self.note_hit_timer[i+1] - _hitspeed;
             end
         end
     end
@@ -390,7 +408,7 @@ function RhythmgameChart:drawChart(notespeed, centerx, arg2)
         _end_buffer = self.trackpos - (2.4 * _averagetimeunit);
     end
 
-    local notei = math.max(self.minnote-1, 1);
+    local notei = math.max(self.minnote-2, 1);
 
     while (notei < #(self.track and self.track.notes or {})) do
         notei = notei+1
@@ -517,20 +535,20 @@ function RhythmgameChart:drawChart(notespeed, centerx, arg2)
         end
         ::continue::
 
-        local _note_count = (self.instrument == 1) and 2 or 3;
-
-        for i=1, _note_count do
-            if (self.hold_end[i] > 0) then
-                local note_end = (self.hold_end[i] - self.trackpos) * notespeed;
-                Draw.setColor(_orange);
-                self:drawNoteLong(centerx, self.bottomy, i, note_end, true);
-                Draw.setColor(_yellow);
-                self:drawNote(centerx, self.bottomy, i);
-            end
-        end
         
-        if (not arg2 and not self.paused) then
+    end
+    local _note_count = (self.instrument == 1) and 2 or 3;
+    for i=1, _note_count do
+        if (self.hold_end[i] > 0) then
+            local note_end = (self.hold_end[i] - self.trackpos) * notespeed;
+            Draw.setColor(_orange);
+            self:drawNoteLong(centerx, self.bottomy, i-1, note_end, true);
+            Draw.setColor(_yellow);
+            self:drawNote(centerx, self.bottomy, i-1);
         end
+    end
+    
+    if (not arg2 and not self.paused) then
     end
     love.graphics.setStencilTest();
     --]==]
@@ -561,11 +579,61 @@ function RhythmgameChart:drawNote(centerx, ypos, notex, arg3)
 end
 
 function RhythmgameChart:drawNoteLong(centerx, bottomy, i, note_end, held)
+    --centerx, bottomy, i, note_end, held
+    if (self.instrument == 2) then
+        centerx = (centerx - 30) + (i * 30);
+        local texture = Assets.getFrames"spr_rhythmgame_heldnote"[1]
+        Draw.draw(texture, centerx, bottomy - note_end, 0, 1, 1, texture:getWidth()/2, texture:getHeight()/2);
+        Draw.draw(texture, centerx, bottomy, 0, 1, 1, texture:getWidth()/2, texture:getHeight()/2);
+    else
+        centerx = (centerx - 20) + (i * 40);
+    end
     
+    fill_rectangle_points(centerx - 3, bottomy - note_end, centerx + (self.instrument == 2 and 4 or 3), bottomy);
+    
+    if (held) then
+        local _endColor = Utils.lerp(COLORS.yellow, COLORS.orange, Utils.clampMap(bottomy, bottomy - 40, bottomy - note_end, 0, 1));
+        _endColor = Utils.lerp(COLORS.black, _endColor, self.brightness);
+        local _startColor = Utils.lerp(COLORS.black, COLORS.yellow, self.brightness);
+        
+        if (self.instrument == 2) then
+            Draw.setColor(_endColor);
+
+            local texture = Assets.getFrames"spr_rhythmgame_heldnote"[1]
+            Draw.draw(texture, centerx, bottomy - note_end, 0, 1, 1, texture:getWidth()/2, texture:getHeight()/2);
+        end
+        
+        love.graphics.setShader(Kristal.Shaders["GradientV"])
+        love.graphics.setColor(COLORS.white)
+        Kristal.Shaders["GradientV"]:send("from", _endColor)
+        Kristal.Shaders["GradientV"]:send("to", _startColor)
+        love.graphics.draw(self.pixel, centerx - 3, bottomy - note_end, 0, 6, note_end)
+        -- ossafe_fill_rectangle_color(centerx - 3, bottomy - note_end, centerx + 3, bottomy, _endColor, _endColor, _startColor, _startColor, false);
+        love.graphics.setShader()
+    end
 end
 
 function RhythmgameChart:update()
     super.update(self)
+    if self.auto_play then
+        self:handleAutoplay()
+    else
+        self:handleInput()
+    end
+end
+
+
+function RhythmgameChart:handleAutoplay()
+    
+end
+
+function RhythmgameChart:handleInput()
+    if Input.pressed("confirm") then
+        self.note_hit_timer[1] = 5
+    end
+    if Input.pressed("cancel") then
+        self.note_hit_timer[2] = 5
+    end
 end
 
 return RhythmgameChart
