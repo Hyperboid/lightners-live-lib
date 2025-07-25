@@ -223,9 +223,9 @@ function RhythmgameChart:drawBorder(arg0, arg1)
         Draw.draw(texture, arg0 - math.floor(texture:getWidth()/2), self.bottomy - 230)
     end
     love.graphics.setLineStyle("rough")
-    -- Two thin lines. Not one thick line for some reason. Maybe Gamemaker just doesn't have line thickness?
-    rectangle_points("line", arg0 - 40, self.bottomy - 200, arg0 + 40, self.bottomy + 50);
-    rectangle_points("line", arg0 - 41, self.bottomy - 201, arg0 + 41, self.bottomy + 51);
+    local w = 1
+    love.graphics.setLineWidth(w*2)
+    rectangle_points("line", arg0 - 40 - w, self.bottomy - 200 - w, arg0 + 40 + w, self.bottomy + 50 + w);
 end
 
 function RhythmgameChart:scr_rhythmgame_noteskip(arg0)
@@ -293,8 +293,7 @@ function RhythmgameChart:drawChart(notespeed, centerx, arg2)
         Draw.setColor(_notecol[0])
         Draw.draw(texture, centerx - 20, self.bottomy, 0, 1, 1, texture:getWidth()/2, texture:getHeight()/2);
         Draw.setColor(_notecol[1])
-        -- The + 19 was + 20 in the OG code but it looked wrong
-        Draw.draw(texture, centerx + 19, self.bottomy, 0, 1, 1, texture:getWidth()/2, texture:getHeight()/2);
+        Draw.draw(texture, centerx + 20, self.bottomy, 0, 1, 1, texture:getWidth()/2, texture:getHeight()/2);
     end
 
     if (self.instrument == 2) then
@@ -346,9 +345,6 @@ function RhythmgameChart:drawChart(notespeed, centerx, arg2)
                 local _side = (i * 2) - 1;
                 local _cenx = centerx + (20 * _side);
                 local _score = 0;
-                if i == 1 then
-                    _cenx = _cenx - 1
-                end
 
                 if (self.instrument == 0) then
                     -- _score = note_hit_score[i+1];
@@ -377,8 +373,8 @@ function RhythmgameChart:drawChart(notespeed, centerx, arg2)
                     -- draw_sprite_ext(spr_whitegradientdown_rhythm, 1, _cenx, self.bottomy, _beam, 1, 0, _gold, 1);
                     -- draw_sprite_ext(spr_whitegradientdown_rhythm, 2, _cenx, self.bottomy, _beam, 1, 0, _white, 1);
                 else
-                    Draw.setColor(_white, _beam)
-                    Draw.draw(gradframes[1], _cenx, self.bottomy, 0, 1, 1, gradframes[1]:getWidth()/2, gradframes[1]:getHeight() - 4);
+                    Draw.setColor(_white)
+                    Draw.draw(gradframes[1], _cenx, self.bottomy, 0, _beam, 1, gradframes[1]:getWidth()/2, gradframes[1]:getHeight() - 4);
                     -- draw_sprite_ext(spr_whitegradientdown_rhythm, 0, _cenx, self.bottomy, _beam, 1, 0, _white, 1);
                 end
 
@@ -617,6 +613,14 @@ function RhythmgameChart:update()
     else
         self:handleInput()
     end
+    for i=1,3 do
+        if self.trackpos > self.hold_end[i] then
+            self.hold_end[i] = 0
+        end
+        if self.hold_end[i] > 0 and self.note_hit_timer[i] < 2 then
+            self.note_hit_timer[i] = 3
+        end
+    end
 end
 
 
@@ -626,6 +630,9 @@ function RhythmgameChart:handleAutoplay()
     end
     if self:getNote(2) then
         self:tryHitNote(2)
+    end
+    if self:getNote(3) then
+        self:tryHitNote(3)
     end
 end
 
