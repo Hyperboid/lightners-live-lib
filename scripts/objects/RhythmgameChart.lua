@@ -96,6 +96,7 @@ local function fill_rectangle_points(x,y,x2,y2)
 end
 
 function RhythmgameChart:drawBacking(notespeed, centerx, debug, mysteryunusedargument)
+    love.graphics.setLineWidth(1)
     debug = debug or false
     mysteryunusedargument = mysteryunusedargument or 0
 
