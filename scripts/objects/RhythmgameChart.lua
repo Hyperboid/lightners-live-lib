@@ -495,13 +495,10 @@ function RhythmgameChart:drawChart(notespeed, centerx, arg2)
                 if (note.noteanim > 0 and arg2) then
                     local _oldcolor = {love.graphics.getColor()};
                     Draw.setColor(_yellow);
-                    draw_circle((centerx - 20 - 15) + (note.notetype * 40), notey, 3, false);
-                    draw_circle((centerx - 20) + 15 + (note.notetype * 40), notey, 3, false);
+                    love.graphics.circle("fill", (centerx - 20 - 15) + (note.notetype * 40), notey, 3)
+                    love.graphics.circle("fill", (centerx - 20) + 15 + (note.notetype * 40), notey, 3)
                     Draw.setColor(_oldcolor);
                 end
-                -- if _notescore > 0 then
-                --     goto continue
-                -- end
                 self:drawNote(centerx, notey, note.notetype);
                 
                 if (arg2 and self.paused and self.do_refresh) then
