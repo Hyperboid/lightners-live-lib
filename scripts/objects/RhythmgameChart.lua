@@ -1,5 +1,6 @@
 ---@class RhythmgameChart: Object
 ---@field track Song.track
+---@field song Song
 local RhythmgameChart, super = Class(Object)
 
 local a_single_pixel_data = love.image.newImageData(1,1)
@@ -25,6 +26,7 @@ function RhythmgameChart:init(instrument, index, track, song)
     self.buffer = {0,0,0};
     self.pressedtimer = {10, 10, 10};
     self.bpm = song and song.bpm or 230;
+    self.song = song
     self.notespacing = 60 / self.bpm;
     self.meter = self.notespacing * 4;
     self.startoffset = 0;
