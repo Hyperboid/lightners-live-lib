@@ -346,8 +346,9 @@ function RhythmgameChart:drawChart(notespeed, centerx, arg2)
                 local _cenx = centerx + (20 * _side);
                 local _score = 0;
 
-                if (self.instrument == 0) then
+                if (self.instrument == 1) and not self.auto_play then
                     -- _score = note_hit_score[i+1];
+                    _score = 100 -- TEMP
                     _cool = _score >= 100;
                     _col = _cool and _gold or _white;
                 end
@@ -358,19 +359,23 @@ function RhythmgameChart:drawChart(notespeed, centerx, arg2)
                         _cool = true;
                         _col = _gold;
                     end
-                    Draw.setColor(_white)
+                    Draw.setColor(_white, self.note_hit_timer[i+1] / 5)
                     Draw.draw(buttonframes[4], _cenx, self.bottomy, 0, 1, 1, buttonframes[4]:getWidth()/2, buttonframes[4]:getHeight()/2);
                     -- draw_sprite_ext(spr_rhythmgame_button, 3, _cenx, self.bottomy, 1, 1, 0, _white, self.note_hit_timer[i] / 5);
                 end
 
                 if (not arg2 and (Game.minigame.fame or 0) >= 12000 and _score > 0) then
-                    Draw.setColor(Utils.lerp(_white, _col, 1 - _ease))
-                    Draw.draw(hitframes[3], _cenx, self.bottomy, 0, 1, 1, hitframes[3]:getWidth()/2, hitframes[3]:getHeight()/2);
+                    Draw.setColor(Utils.lerp(_white, _col, 1 - _ease), _ease)
+                    Draw.draw(hitframes[math.floor((1 - _beam) * 2.9)], _cenx, self.bottomy, 0, 2 - _beam, 2 - _beam, hitframes[3]:getWidth()/2, hitframes[3]:getHeight()/2);
                     -- draw_sprite_ext(spr_rhythmgame_note_hit, (1 - _beam) * 2.9, _cenx + (_side * (1 - _ease) * 2), self.bottomy, 2 - _beam, 2 - _beam, 0, Utils.lerp(_white, _col, 1 - _ease), _ease);
                 end
 
                 if (_cool) then
+                    Draw.setColor(_gold)
+                    Draw.draw(gradframes[2], _cenx, self.bottomy, 0, _beam, 1, gradframes[2]:getWidth()/2, gradframes[2]:getHeight() - 4);
                     -- draw_sprite_ext(spr_whitegradientdown_rhythm, 1, _cenx, self.bottomy, _beam, 1, 0, _gold, 1);
+                    Draw.setColor(_white)
+                    Draw.draw(gradframes[3], _cenx, self.bottomy, 0, _beam, 1, gradframes[3]:getWidth()/2, gradframes[3]:getHeight() - 4);
                     -- draw_sprite_ext(spr_whitegradientdown_rhythm, 2, _cenx, self.bottomy, _beam, 1, 0, _white, 1);
                 else
                     Draw.setColor(_white)
@@ -617,7 +622,7 @@ function RhythmgameChart:update()
         if self.trackpos > self.hold_end[i] then
             self.hold_end[i] = 0
         end
-        if self.hold_end[i] > 0 and self.note_hit_timer[i] < 2 then
+        if self.hold_end[i] > 0 and self.note_hit_timer[i] <= 1 then
             self.note_hit_timer[i] = 3
         end
     end
@@ -661,7 +666,7 @@ function RhythmgameChart:tryHitNote(lane)
     if note.noteend > 0 then
         self.hold_start[lane] = note.notestart
     end
-    note.notescore = 3
+    note.notescore = 100
     note.notealive = false
     if self.track then
         Game.minigame:setTrackActive(self.track.name, true)
