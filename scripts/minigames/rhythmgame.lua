@@ -15,15 +15,22 @@ function minigame:init(song)
         self:addChild(RhythmgameChart(1, 2, self.song.tracks.drums, self.song));
         self:addChild(RhythmgameChart(3, 3, self.song.tracks.vocals, self.song));
     }
+    self.fame = 9999999
+    self.overrun = song.start_delay or -1
 end
 
 function minigame:onAdd(parent)
     super.onAdd(self, parent)
-    self.song:start()
 end
 
 function minigame:update()
     local timescale = (DT / BASE_DT)
+    if self.overrun < 0 then
+        self.overrun = Utils.approach(self.overrun, 0, DT)
+        if self.overrun == 0 then
+            self.song:start()
+        end
+    end
     for _, value in pairs(self.song.tracks) do
         if value.source then
             value.source:setPitch(timescale)
@@ -36,6 +43,9 @@ function minigame:update()
 end
 
 function minigame:tell()
+    if self.overrun < 0 then
+        return self.overrun
+    end
     for _, value in pairs(self.song.tracks) do
         if value.source then
             return value.source:tell()
@@ -45,6 +55,10 @@ function minigame:tell()
 end
 
 function minigame:seek(t)
+    if self.overrun < 0 then
+        self.song:start()
+        self.overrun = 0
+    end
     for _, value in pairs(self.song.tracks) do
         if value.source then
             value.source:seek(t)
