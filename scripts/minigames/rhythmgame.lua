@@ -16,7 +16,7 @@ function minigame:init(song)
         self:addChild(RhythmgameChart(3, 3, self.song.tracks.vocals, self.song));
     }
     self.fame = 9999999
-    self.overrun = song.start_delay or -1
+    self.overrun = -(song.start_delay or 1)
 end
 
 function minigame:onAdd(parent)
