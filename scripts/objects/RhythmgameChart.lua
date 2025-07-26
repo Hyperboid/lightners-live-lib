@@ -406,7 +406,7 @@ function RhythmgameChart:drawChart(notespeed, centerx, arg2)
         _end_buffer = self.trackpos - (2.4 * _averagetimeunit);
     end
 
-    local notei = math.max(self.minnote-2, 1);
+    local notei = math.max(self.minnote-2, 1)-1;
 
     while (notei < #(self.track and self.track.notes or {})) do
         notei = notei+1
