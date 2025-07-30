@@ -25,6 +25,7 @@ function Song:init(data)
             self.tracks[trackname].source:setVolume(0)
         end
     end
+    self.notespeed = 40
 end
 
 function Song:start()
@@ -42,6 +43,22 @@ function Song:seek(t)
             value.source:seek(t)
         end
     end
+end
+
+function Song:getBPM()
+    return self.bpm
+end
+
+function Song:secondsToYPos(seconds)
+    return ((seconds * self.notespeed))*4
+end
+
+function Song:beatToSeconds(beat)
+    return beat*(60/self:getBPM())
+end
+
+function Song:secondsToBeat(seconds)
+    return seconds*(self:getBPM()/60)
 end
 
 return Song
