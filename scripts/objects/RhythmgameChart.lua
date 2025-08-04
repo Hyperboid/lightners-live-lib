@@ -83,9 +83,9 @@ function RhythmgameChart:init(instrument, index, track, song)
 end
 
 function RhythmgameChart:draw()
-    self:drawBacking(160, Game.minigame.song.notespeed, DEBUG_RENDER)
-    self:drawChart(160, Game.minigame.song.notespeed, DEBUG_RENDER)
-    self:drawBorder(Game.minigame.song.notespeed, DEBUG_RENDER)
+    self:drawBacking(160, self.song.notespeed, DEBUG_RENDER)
+    self:drawChart(160, self.song.notespeed, DEBUG_RENDER)
+    self:drawBorder(self.song.notespeed, DEBUG_RENDER)
 end
 
 
@@ -134,12 +134,12 @@ function RhythmgameChart:drawBacking(notespeed, centerx, debug, mysteryunusedarg
     local whitebarstart = (self.bottomy - linegap) + (((self.trackpos - self.startoffset) % (self.notespacing * 4)) * notespeed);
     Draw.setColor(_gray);
 
-    local startbeat = math.floor(Game.minigame.song:secondsToBeat(Game.minigame:tell()))
+    local startbeat = math.floor(self.song:secondsToBeat(Game.minigame:tell()))
     love.graphics.setFont(Assets.getFont("main", 16))
 
     for i=startbeat - 4, startbeat + 19 do
         local liney = linestart + (self.notespacing * notespeed * i);
-        liney = ((Game.minigame.song:secondsToYPos(self.trackpos) - Game.minigame.song:secondsToYPos(Game.minigame.song:beatToSeconds(i)))) + self.bottomy
+        liney = ((self.song:secondsToYPos(self.trackpos) - self.song:secondsToYPos(self.song:beatToSeconds(i)))) + self.bottomy
 
         if (not debug and (liney < (self.bottomy - 200) or liney > (self.bottomy + 50))) then
             goto continue;
@@ -423,7 +423,7 @@ function RhythmgameChart:drawChart(notespeed, centerx, arg2)
         local _notealive = self.track.notes[notei].notealive;
         local _notescore = self.track.notes[notei].notescore;
         local _noteend = self.track.notes[notei].noteend;
-        if (not arg2 and self.instrument ~= 1 and Game.minigame.song.id == "raiseupyourbat") then
+        if (not arg2 and self.instrument ~= 1 and self.song.id == "raiseupyourbat") then
             _notetime = self:scr_rhythmgame_noteskip(self.track.notes[notei].notetime);
 
             if (_noteend > 0) then
@@ -449,7 +449,7 @@ function RhythmgameChart:drawChart(notespeed, centerx, arg2)
         else
         end
 
-        local notey = (self.bottomy - (Game.minigame.song:secondsToYPos(_notetime))) + (Game.minigame.song:secondsToYPos(self.trackpos));
+        local notey = (self.bottomy - (self.song:secondsToYPos(_notetime))) + (self.song:secondsToYPos(self.trackpos));
         local _topy = 0 - 20;
 
         if (notey < _topy) then
@@ -496,7 +496,7 @@ function RhythmgameChart:drawChart(notespeed, centerx, arg2)
             if (_notealive == 1 or _notescore <= 0) then
                 if (_notescore < 0 and _noteend > 0 and _notealive == 0) then
                     _notetime = _notetime - self.track.notes[notei].notescore;
-                    notey = (self.bottomy - (Game.minigame.song:secondsToYPos(_notetime))) + (Game.minigame.song:secondsToYPos(self.trackpos));
+                    notey = (self.bottomy - (self.song:secondsToYPos(_notetime))) + (self.song:secondsToYPos(self.trackpos));
                     _notescore = 0;
                 end
                 
@@ -529,7 +529,7 @@ function RhythmgameChart:drawChart(notespeed, centerx, arg2)
                 
                 if (_noteend > 0) then
                     -- local notelength = (_noteend - _notetime) * notespeed;
-                    local notelength = - ((Game.minigame.song:secondsToYPos(_notetime)) - (Game.minigame.song:secondsToYPos(_noteend)));
+                    local notelength = - ((self.song:secondsToYPos(_notetime)) - (self.song:secondsToYPos(_noteend)));
                     self:drawNoteLong(centerx, notey, note.notetype, notelength, false);
                 end
             end
@@ -547,7 +547,7 @@ function RhythmgameChart:drawChart(notespeed, centerx, arg2)
     for i=1, _note_count do
         if (self.hold_end[i] > 0) then
             -- local note_end = (self.hold_end[i] - self.trackpos) * notespeed;
-            local note_end = - ((Game.minigame.song:secondsToYPos(self.trackpos)) - (Game.minigame.song:secondsToYPos(self.hold_end[i])));
+            local note_end = - ((self.song:secondsToYPos(self.trackpos)) - (self.song:secondsToYPos(self.hold_end[i])));
             Draw.setColor(_orange);
             self:drawNoteLong(centerx, self.bottomy, i-1, note_end, true);
             Draw.setColor(_yellow);
