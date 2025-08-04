@@ -55,6 +55,9 @@ function Song:secondsToYPos(seconds)
 end
 
 function Song:beatToSeconds(beat)
+    if #self.events == 0 then
+        return beat * (60/self:getBPM())
+    end
     local delta = 1/8
     local bpm = self:getBPM()
     local seconds = 0
@@ -89,8 +92,13 @@ function Song:beatToSeconds(beat)
     return seconds
 end
 
+-- TODO: Implement the inverse of beatToSeconds when tempo changes are involved
 function Song:secondsToBeat(seconds)
     return seconds*(self:getBPM()/60)
 end
+
+function Song:drawBackground() end
+
+function Song:drawOverlay() end
 
 return Song

@@ -1,6 +1,9 @@
 ---@class Minigame.rhythmgame : Minigame
 ---@field song Song
-local minigame, super = Class(Minigame, "rhythmgame")
+local minigame, super = Class(Minigame or Object, "rhythmgame")
+
+function minigame:onKeyPressed() end
+function minigame:onKeyReleased() end
 
 function minigame:init(song)
     super.init(self)
@@ -40,6 +43,12 @@ function minigame:update()
         value.trackpos = self:tell()
     end
     super.update(self)
+end
+
+function minigame:draw()
+    self.song:drawBackground()
+    super.draw(self)
+    self.song:drawOverlay()
 end
 
 function minigame:tell()
