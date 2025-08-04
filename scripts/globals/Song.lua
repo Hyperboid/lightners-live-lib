@@ -7,6 +7,7 @@ function Song:init(data)
     data = data or {}
     self.tracks = {}
     self.bpm = data.bpm
+    self.events = data and data.events or {}
     local tracks_names = Utils.removeDuplicates(Utils.getKeys(Utils.mergeMultiple(data.tracks, data.notes)))
     for i = 1, #(tracks_names) do
         local trackname = tracks_names[i]
@@ -54,7 +55,38 @@ function Song:secondsToYPos(seconds)
 end
 
 function Song:beatToSeconds(beat)
-    return beat*(60/self:getBPM())
+    local delta = 1/8
+    local bpm = self:getBPM()
+    local seconds = 0
+    local next_time_event = 1
+    local active_timeevent = nil
+    -- BUG: This discrete approach won't work for negatives! They just get clamped to 0! At some point, rewrite this.
+    for curbeat = 0, beat - delta, delta do
+        seconds = seconds + (delta * (60/bpm))
+        -- bpm = bpm + (delta/8)
+        if not active_timeevent and self.events[next_time_event] and (self.events[next_time_event].starttime < curbeat) then
+            active_timeevent = self.events[next_time_event]
+            if active_timeevent.type == "tempo" then
+                bpm = active_timeevent.starttempo
+            end
+            next_time_event = next_time_event + 1
+        end
+
+        if active_timeevent then
+            local progress = Utils.clampMap(curbeat, active_timeevent.starttime, active_timeevent.endtime, 0, 1)
+            if progress >= 1 then
+                if active_timeevent.type == "tempo" then
+                    bpm = active_timeevent.endtempo
+                end
+                active_timeevent = nil
+            else
+                if active_timeevent.type == "tempo" then
+                    bpm = Utils.ease(active_timeevent.starttempo, active_timeevent.endtempo, progress, active_timeevent.ease or "linear")
+                end
+            end
+        end
+    end
+    return seconds
 end
 
 function Song:secondsToBeat(seconds)

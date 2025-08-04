@@ -134,15 +134,21 @@ function RhythmgameChart:drawBacking(notespeed, centerx, debug, mysteryunusedarg
     local whitebarstart = (self.bottomy - linegap) + (((self.trackpos - self.startoffset) % (self.notespacing * 4)) * notespeed);
     Draw.setColor(_gray);
 
-    local startbeat = math.floor(self.song:secondsToBeat(Game.minigame:tell()))
+    -- TODO: Optimize this shit
+    -- local startbeat = math.floor(self.song:secondsToBeat(Game.minigame:tell()))
+    local startbeat = 0
+    -- local endbeat = startbeat + 19
+    local endbeat = startbeat + 1000
     love.graphics.setFont(Assets.getFont("main", 16))
 
-    for i=startbeat - 4, startbeat + 19 do
+    for i=startbeat - 4, endbeat do
         local liney = linestart + (self.notespacing * notespeed * i);
         liney = ((self.song:secondsToYPos(self.trackpos) - self.song:secondsToYPos(self.song:beatToSeconds(i)))) + self.bottomy
 
-        if (not debug and (liney < (self.bottomy - 200) or liney > (self.bottomy + 50))) then
+        if (not debug and liney > (self.bottomy + 50)) then
             goto continue;
+        elseif (liney < (self.bottomy - 200)) then
+            break
         end
 
         Draw.setColor(_gray);
