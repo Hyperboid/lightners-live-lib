@@ -83,9 +83,9 @@ function RhythmgameChart:init(instrument, index, track, song)
 end
 
 function RhythmgameChart:draw()
-    self:drawBacking(160, self.song.notespeed, DEBUG_RENDER)
-    self:drawChart(160, self.song.notespeed, DEBUG_RENDER)
-    self:drawBorder(self.song.notespeed, DEBUG_RENDER)
+    self:drawBacking(self.song.notespeed * 4, 40, DEBUG_RENDER)
+    self:drawChart(self.song.notespeed * 4, 40, DEBUG_RENDER)
+    self:drawBorder(40, DEBUG_RENDER)
 end
 
 
@@ -419,10 +419,10 @@ function RhythmgameChart:drawChart(notespeed, centerx, arg2)
     while (notei < #(self.track and self.track.notes or {})) do
         notei = notei+1
         local note = self.track.notes[notei]
-        local _notetime = self.track.notes[notei].notetime;
-        local _notealive = self.track.notes[notei].notealive;
-        local _notescore = self.track.notes[notei].notescore;
-        local _noteend = self.track.notes[notei].noteend;
+        local _notetime = self.song:beatToSeconds(note.notetime);
+        local _notealive = note.notealive;
+        local _notescore = note.notescore;
+        local _noteend = self.song:beatToSeconds(note.noteend);
         if (not arg2 and self.instrument ~= 1 and self.song.id == "raiseupyourbat") then
             _notetime = self:scr_rhythmgame_noteskip(self.track.notes[notei].notetime);
 
@@ -529,7 +529,7 @@ function RhythmgameChart:drawChart(notespeed, centerx, arg2)
                 
                 if (_noteend > 0) then
                     -- local notelength = (_noteend - _notetime) * notespeed;
-                    local notelength = - ((self.song:secondsToYPos(_notetime)) - (self.song:secondsToYPos(_noteend)));
+                    local notelength = - ((self.song:secondsToYPos((_notetime))) - (self.song:secondsToYPos(_noteend)));
                     self:drawNoteLong(centerx, notey, note.notetype, notelength, false);
                 end
             end
@@ -547,7 +547,7 @@ function RhythmgameChart:drawChart(notespeed, centerx, arg2)
     for i=1, _note_count do
         if (self.hold_end[i] > 0) then
             -- local note_end = (self.hold_end[i] - self.trackpos) * notespeed;
-            local note_end = - ((self.song:secondsToYPos(self.trackpos)) - (self.song:secondsToYPos(self.hold_end[i])));
+            local note_end = - ((self.song:secondsToYPos(self.trackpos)) - (self.song:secondsToYPos(self.song:beatToSeconds(self.hold_end[i]))));
             Draw.setColor(_orange);
             self:drawNoteLong(centerx, self.bottomy, i-1, note_end, true);
             Draw.setColor(_yellow);
@@ -626,7 +626,7 @@ function RhythmgameChart:update()
         self:handleInput()
     end
     for i=1,3 do
-        if self.trackpos > self.hold_end[i] then
+        if self.trackpos > self.song:beatToSeconds(self.hold_end[i]) then
             self.hold_end[i] = 0
         end
         if self.hold_end[i] > 0 and self.note_hit_timer[i] <= 1 then
@@ -653,7 +653,7 @@ function RhythmgameChart:getNote(lane)
         if not (self.track and self.track.notes[i]) then break end
         if self.track.notes[i].notetype == lane - 1
             and self.track.notes[i].notescore == 0
-            and math.abs(self.track.notes[i].notetime - (self.trackpos)) < 0.1 then
+            and math.abs(self.song:beatToSeconds(self.track.notes[i].notetime) - (self.trackpos)) < 0.1 then
             return self.track.notes[i], i
         end
     end
